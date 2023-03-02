@@ -8,8 +8,12 @@ with open('requirements.txt') as f:
 
 setup(
     name="scButterfly",
-    version="0.0.1",
+    version="0.0.2",
     description="Single-cell cross-modality translation via multi-use dual-aligned variational autoencoders",
+    long_description="Single-cell cross-modality translation via multi-use dual-aligned variational autoencoders",
+    license="MIT Licence",
+    url="https://github.com/BioX-NKU/scButterfly",
+    author="BioX-NKU",
     classifiers=[
         "Programming Language :: Python :: 3.9",
     ],

@@ -5,7 +5,7 @@
 
 
 
-scButterfly: Single-cell cross-modality translation via multi-use dual-aligned variational autoencoders
+scButterfly: single-cell cross-modality translation via multi-use dual-aligned variational autoencoders
 ===================================================================================================
 
 

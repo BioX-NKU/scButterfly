@@ -1,4 +1,4 @@
-# scButterfly: Single-cell cross-modality translation via multi-use dual-aligned variational autoencoders
+# scButterfly: single-cell cross-modality translation via multi-use dual-aligned variational autoencoders
 
 ## Installation
 
@@ -35,7 +35,7 @@ python setup.py install
 
 ## Quick Start
 
-scButterfly could be easily used following 3 steps: Data Preprocessing, Model training, Predicting and evaluating.more details could be find in [scButterfly documents].
+scButterfly could be easily used following 3 steps: Data Preprocessing, Model training, Predicting and evaluating.more details could be find in [scButterfly documents](http://scbutterfly.readthedocs.io/).
 
 Generate a butterfly model first for following process:
 
@@ -76,7 +76,7 @@ butterfly = Butterfly()
   | file_path    | optional, the path for saving processed data, only used if `save_data` is True, default None.  |
   | logging_path | optional, the path for output process logging, if not save, set it None, default None.       |
 
-  scButterfly also support to refine this process using other parameters(more details on [scButterfly documents]), however, we strongly recommend the default settings to keep the best result for model.
+  scButterfly also support to refine this process using other parameters (more details on [scButterfly documents](http://scbutterfly.readthedocs.io/)), however, we strongly recommend the default settings to keep the best result for model.
   
 ### 2. Model training
 
@@ -119,7 +119,7 @@ butterfly = Butterfly()
   | load_model   | optional, the path for load pretrained model, if not load, set it None, default None.   |
   | logging_path | optional, the path for output training logging, if not save, set it None, default None. |
   
-  scButterfly also support to refine the model structure and training process using other parameters for `butterfly.construct_model()` and `butterfly.train_model()` (more details on [scButterfly documents]).
+  scButterfly also support to refine the model structure and training process using other parameters for `butterfly.construct_model()` and `butterfly.train_model()` (more details on [scButterfly documents](http://scbutterfly.readthedocs.io/)).
   
 ### 3. Predicting and evaluating
 
@@ -143,4 +143,4 @@ butterfly = Butterfly()
 
 ## Document and tutorial
 
-We provide a tutorial and richer document for scButterfly in [scButterfly documents], including more details of provided APIs for customing data preprocessing, model structure and training strategy.
+### We provide a tutorial and richer document for scButterfly in [scButterfly documents](http://scbutterfly.readthedocs.io/), including more details of provided APIs for customing data preprocessing, model structure and training strategy.

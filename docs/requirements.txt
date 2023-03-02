@@ -12,3 +12,5 @@ matplotlib
 leidenalg
 pybedtools
 adjusttext
+sphinx_autodoc_typehints
+nbsphinx

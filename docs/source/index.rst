@@ -1,7 +1,13 @@
-Welcome to scButterfly's documentation!
-=====================================
+|Docs|
+
+.. |Docs| image:: https://readthedocs.org/projects/scbutterfly/badge/?version=latest
+   :target: https://scbutterfly.readthedocs.io
+
+
 
 scButterfly: Single-cell cross-modality translation via multi-use dual-aligned variational autoencoders
+===================================================================================================
+
 
 .. toctree::
    :maxdepth: 2
@@ -10,10 +16,12 @@ scButterfly: Single-cell cross-modality translation via multi-use dual-aligned v
    API/index
    Tutorial/index
    Installation
+   release/index
 
-Indices and tables
-==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+News
+----
+
+.. include:: news.rst
+   :start-line: 2
+   :end-line: 22  

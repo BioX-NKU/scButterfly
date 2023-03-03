@@ -3,12 +3,9 @@ import pathlib
 
 here = pathlib.Path(__file__).parent.resolve()
 
-with open('requirements.txt') as f:
-    requirements = f.read().splitlines()
-
 setup(
     name="scButterfly",
-    version="0.0.2",
+    version="0.0.4",
     description="Single-cell cross-modality translation via multi-use dual-aligned variational autoencoders",
     long_description="Single-cell cross-modality translation via multi-use dual-aligned variational autoencoders",
     license="MIT Licence",
@@ -34,6 +31,7 @@ setup(
         'matplotlib>=3.6.2',
         'leidenalg',
         'pybedtools',
-        'adjusttext'
+        'adjusttext',
+        'jupyter'
     ]
 )

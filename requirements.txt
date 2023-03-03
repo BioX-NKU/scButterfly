@@ -12,3 +12,4 @@ matplotlib>=3.6.2
 leidenalg
 pybedtools
 adjusttext
+jupyter

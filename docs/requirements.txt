@@ -1,0 +1,16 @@
+scanpy
+torch
+torchvision
+torchaudio
+scikit-learn
+scvi-tools
+scvi-colab
+scipy
+episcanpy==0.3.2
+seaborn
+matplotlib
+leidenalg
+pybedtools
+adjusttext
+sphinx_autodoc_typehints
+nbsphinx

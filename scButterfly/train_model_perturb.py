@@ -387,94 +387,6 @@ class Model():
         torch.save(self.translator.state_dict(), output_path + '/model/translator.pt')
         torch.save(self.discriminator_A.state_dict(), output_path + '/model/discriminator_A.pt')
         torch.save(self.discriminator_R.state_dict(), output_path + '/model/discriminator_R.pt')
-   
-
-    def evaluation(
-        self,
-        max_evaluate : int,
-        RNA_data,
-        ATAC_data,
-        id_list
-    ):
-        mean_test_loss = 0
-        mean_test_auroc = 0
-        mean_test_aupr = 0
-        mean_test_pearson = 0
-        mean_test_spearman = 0
-        sum_auroc = 0
-        sum_aupr = 0
-        max_enum = 9
-        RNA_input_dim = RNA_data.X.toarray().shape[1]
-        ATAC_input_dim = ATAC_data.X.toarray().shape[1]
-        
-        self.test_dataset = RNA_ATAC_dataset(RNA_data, ATAC_data, id_list, id_list)
-        
-        self.test_dataloader = DataLoader(self.test_dataset, batch_size=1, shuffle=False, num_workers=self.num_workers)
-        
-        self.set_eval()
-        batch_samples_list_A = []
-        # to get every_mean
-        for epoch1 in range(1):
-            with torch.no_grad():
-                for idx, batch_samples in enumerate(self.test_dataloader):
-
-                    if torch.cuda.is_available():
-                        batch_samples = batch_samples.cuda().to(torch.float32)
-
-                    RNA_input, ATAC_input = torch.split(batch_samples, [RNA_input_dim, ATAC_input_dim], dim=1)
-                    for i in range(len(ATAC_input)):
-                        batch_samples_list_A.append(torch.reshape(ATAC_input[i].cpu(),(1,len(ATAC_input[0]))))
-            batch_samples_list_A = torch.cat(batch_samples_list_A, dim = 0)
-            every_mean = torch.mean(batch_samples_list_A, dim = 0)
-        
-        with torch.no_grad():
-            for idx, batch_samples in enumerate(self.test_dataloader):
-                if torch.cuda.is_available():
-                    batch_samples = batch_samples.cuda().to(torch.float32)
-
-
-                RNA_input, ATAC_input = torch.split(batch_samples, [RNA_input_dim, ATAC_input_dim], dim=1)
-                R2 = self.RNA_encoder(RNA_input)
-                A2 = self.ATAC_encoder(ATAC_input)
-                R2R, R2A, mu_r, sigma_r = self.translator.test_model(R2, 'RNA')
-                A2R, A2A, mu_a, sigma_a = self.translator.test_model(A2, 'ATAC')
-                R2A = self.ATAC_decoder(R2A)
-                A2R = self.RNA_decoder(A2R)
-
-                atac_input = ATAC_input.cpu().numpy()
-                rna_input = RNA_input.cpu().numpy()
-                r2a = R2A.cpu().detach().numpy()
-                a2r = A2R.cpu().detach().numpy()
-                ss = sum(atac_input)
-
-                for i in range(len(atac_input)):
-                    a=AUROC(r2a[i,:],atac_input[i,:], every_mean)
-                    if a != 0:
-                        mean_test_auroc += a
-                        sum_auroc += 1
-                    else:
-                        mean_test_auroc += a
-                    b = AUPR_norm(r2a[i,:],atac_input[i,:], every_mean)
-                    if b!= 0:
-                        mean_test_aupr += b
-                        sum_aupr += 1
-                    else:
-                        mean_test_aupr += b
-
-                    mean_test_pearson += pearson(a2r[i,:],rna_input[i,:])
-                    mean_test_spearman += spearman(a2r[i,:],rna_input[i,:])
-                print(idx)
-                        
-                if idx == max_evaluate-1:
-                    break
-
-        mean_test_auroc /= sum_auroc
-        mean_test_aupr /= sum_aupr
-        mean_test_pearson /= max_evaluate
-        mean_test_spearman /= max_evaluate
- 
-        return [mean_test_auroc,mean_test_aupr,mean_test_pearson,mean_test_spearman]
-
 
 
     def train(
@@ -756,9 +668,9 @@ class Model():
         
         
         pretrain_a_loss, pretrain_a_kl, pretrain_a_loss_val, pretrain_a_kl_val = [], [], [], []
-        my_logger.info('Stimulate pretraining ...')
+        my_logger.info('Stimulated pretraining ...')
         with tqdm(total = A2A_pretrain_epoch, ncols=100) as pbar:
-            pbar.set_description('Stimulate pretrain')
+            pbar.set_description('Stimulated pretrain')
             for epoch in range(A2A_pretrain_epoch):
                 pretrain_a_loss_, pretrain_a_kl_, pretrain_a_loss_val_, pretrain_a_kl_val_ = [], [], [], []
                 self.set_train()
@@ -812,7 +724,7 @@ class Model():
                     val='{:.4f}'.format(np.mean(pretrain_a_loss_)))
                 
                 if self.early_stopping_A2A.early_stop:
-                    my_logger.info('Stimulate pretraining early stop, validation loss does not improve in '+str(patience)+' epoches!')
+                    my_logger.info('Stimulated pretraining early stop, validation loss does not improve in '+str(patience)+' epoches!')
                     self.ATAC_encoder.load_state_dict(torch.load(output_path + '/model/ATAC_encoder.pt'))
                     self.ATAC_decoder.load_state_dict(torch.load(output_path + '/model/ATAC_decoder.pt'))
                     self.A_translator.load_state_dict(torch.load(output_path + '/model/A_translator.pt'))
@@ -821,9 +733,9 @@ class Model():
         
         """ train for translator and discriminator """
         train_loss, train_kl, train_discriminator, train_loss_val, train_kl_val, train_discriminator_val = [], [], [], [], [], []
-        my_logger.info('Combine training ...')
+        my_logger.info('Integrative training ...')
         with tqdm(total = translator_epoch, ncols=100) as pbar:
-            pbar.set_description('Combine training')
+            pbar.set_description('Integrative training')
             for epoch in range(translator_epoch):
                 train_loss_, train_kl_, train_discriminator_, train_loss_val_, train_kl_val_, train_discriminator_val_ = [], [], [], [], [], []
                 self.set_train()
@@ -905,7 +817,7 @@ class Model():
                     val='{:.4f}'.format(np.mean(train_loss_)))
                 
                 if self.early_stopping_all.early_stop:
-                    my_logger.info('Combine training early stop, validation loss does not improve in '+str(patience)+' epoches!')
+                    my_logger.info('Integrative training early stop, validation loss does not improve in '+str(patience)+' epoches!')
                     self.RNA_encoder.load_state_dict(torch.load(output_path + '/model/RNA_encoder.pt'))
                     self.ATAC_encoder.load_state_dict(torch.load(output_path + '/model/ATAC_encoder.pt'))
                     self.RNA_decoder.load_state_dict(torch.load(output_path + '/model/RNA_decoder.pt'))

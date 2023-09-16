@@ -7,8 +7,41 @@ import random
 import episcanpy.api as epi
 import scipy
 from scipy.sparse import csr_matrix
+from scipy.stats.mstats import gmean
 from scButterfly.logger import *
 
+
+def CLR_transform(ADT_data):
+    """
+    Centered log-ratio transformation for ADT data.
+
+    Parameters
+    ----------
+    ADT_data: Anndata
+        ADT anndata for processing.
+
+    Returns
+    ----------
+    ADT_data_processed: Anndata
+        ADT data with CLR transformation preprocessed.
+
+    gmean_list
+        vector of geometric mean for ADT expression of each cell.
+    """
+    ADT_matrix = ADT_data.X.todense()
+    gmean_list = []
+    for i in range(ADT_matrix.shape[0]):
+        temp = []
+        for j in range(ADT_matrix.shape[1]):
+            if not ADT_matrix[i, j] == 0:
+                temp.append(ADT_matrix[i, j])
+        gmean_temp = gmean(temp)
+        gmean_list.append(gmean_temp)
+        for j in range(ADT_matrix.shape[1]):
+            if not ADT_matrix[i, j] == 0:
+                ADT_matrix[i, j] = np.log(ADT_matrix[i, j] / gmean_temp)
+    ADT_data_processed = ad.AnnData(csr_matrix(ADT_matrix), obs=ADT_data.obs, var=ADT_data.var)
+    return ADT_data_processed, gmean_list
 
 def TFIDF(count_mat): 
     """
@@ -184,7 +217,7 @@ def ATAC_data_preprocessing(
         choose use peaks filtering or not, default True.
         
     fpeaks: float
-        the fpeaks for peaks filtering, is don't filter peaks set it None, default 0.005.
+        filter out the peaks expressed less than fpeaks*n_cells, if don't filter peaks set it None, default 0.005.
         
     tfidf: bool
         choose using TF-IDF transform or not, default True.
@@ -217,7 +250,7 @@ def ATAC_data_preprocessing(
         
     """
     ATAC_data_processed = ATAC_data.copy()
-    
+    divide_title, multiply_title, max_temp = None, None, None
     my_logger = create_logger(name='ATAC preprocessing', ch=True, fh=False, levelname=logging.INFO, overwrite=False)
     if not logging_path is None:
         file_handle=open(logging_path + '/Parameters_Record.txt',mode='a')

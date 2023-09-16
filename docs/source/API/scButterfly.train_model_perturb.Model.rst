@@ -14,7 +14,6 @@
    .. autosummary::
    
       ~Model.__init__
-      ~Model.evaluation
       ~Model.forward_A2A
       ~Model.forward_R2R
       ~Model.forward_discriminator

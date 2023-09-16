@@ -5,38 +5,37 @@ Tutorial
 Translation between scRNA-seq and scATAC-seq paired data
 --------------------------------------------------------
 
-scButterfly could make translation between scRNA-seq and scATAC-seq paired data 
-using integrated scButterfly model in ``scButterfly.butterfly``.
+scButterfly could make translation between scRNA-seq and scATAC-seq paired data using scButterfly model in ``scButterfly.butterfly``.
 
-* `Basic scButterfly usage <RNA_ATAC_paired_prediction/RNA_ATAC_paired_basic.ipynb>`_
-* `scButterfly with data amplification using cell type labels <RNA_ATAC_paired_prediction/RNA_ATAC_paired_celltype_amp.ipynb>`_
-* `scButterfly with data amplification using MultiVI integrated labels <RNA_ATAC_paired_prediction/RNA_ATAC_paired_MultiVI_amp.ipynb>`_
+* `scButterfly-B usage <RNA_ATAC_paired_prediction/RNA_ATAC_scButterfly-B.ipynb>`_
+* `scButterfly-T using augmentation with cell-type labels <RNA_ATAC_paired_prediction/RNA_ATAC_paired_scButterfly-T.ipynb>`_
+* `scButterfly-C using augmentation with MultiVI integrated labels <RNA_ATAC_paired_prediction/RNA_ATAC_paired_scButterfly-C.ipynb>`_
 
 Extension usages of scButterfly framework
 ---------------------------------------
 
 scButterfly provide a series of extension usage with preprocessing in ``scButterfly.data_processing`` and 
-model in ``scButterfly.train_model`` (scRNA-seq ~ scATAC-seq), ``scButterfly.train_model_cite`` (scRNA-seq ~ scADT-seq) 
-or ``scButterfly.train_model_perturb`` (single-cell perturb data).
+model in ``scButterfly.train_model`` (scRNA-seq ~ scATAC-seq), ``scButterfly.train_model_cite`` (scRNA-seq ~ ADT data) 
+or ``scButterfly.train_model_perturb`` (single-cell perturbation responses data).
 
 Translation between scRNA-seq and scATAC-seq unpaired data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* `Single omics unpaired data prediction using scButterfly framework <RNA_ATAC_unpaired_prediction/RNA_ATAC_unpaired_basic.ipynb>`_
+* `Unpaired data translation using scButterfly-T <RNA_ATAC_unpaired_prediction/RNA_ATAC_unpaired_scButterfly-T.ipynb>`_
 
 
 Translation between scRNA-seq and scADT-seq paired data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* `Basic scButterfly usage <RNA_ADT_paired_prediction/RNA_ADT_paired_basic.ipynb>`_
-* `scButterfly with data amplification using cell type labels <RNA_ADT_paired_prediction/RNA_ADT_paired_celltype_amp.ipynb>`_
-* `scButterfly with data amplification using TotalVI integrated labels <RNA_ADT_paired_prediction/RNA_ADT_paired_TotalVI_amp.ipynb>`_
+* `scButterfly-B usage <RNA_ADT_paired_prediction/RNA_ADT_paired_scButterfly-B.ipynb>`_
+* `scButterfly-T using augmentation with cell-type labels <RNA_ADT_paired_prediction/RNA_ADT_paired_scButterfly-T.ipynb>`_
+* `scButterfly-C using augmentation with totalVI integrated labels <RNA_ADT_paired_prediction/RNA_ADT_paired_scButterfly-C.ipynb>`_
 
 
-Translation between single cell perturb data
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Translation between single-cell perturbation responses data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* `Perturb prediction using scButterfly framework <Perturb_prediction/Perturb_unpaired_basic.ipynb>`_
+* `Perturbation responses prediction using scButterfly-T <Perturb_prediction/Perturb_unpaired_scButterfly-T.ipynb>`_
 
 
 Examples
@@ -46,14 +45,14 @@ Examples
     :maxdepth: 2
     :hidden:
 
-    RNA_ATAC_paired_prediction/RNA_ATAC_paired_basic
-    RNA_ATAC_paired_prediction/RNA_ATAC_paired_celltype_amp
-    RNA_ATAC_paired_prediction/RNA_ATAC_paired_MultiVI_amp
+    RNA_ATAC_paired_prediction/RNA_ATAC_paired_scButterfly-B
+    RNA_ATAC_paired_prediction/RNA_ATAC_paired_scButterfly-T
+    RNA_ATAC_paired_prediction/RNA_ATAC_paired_scButterfly-C
 
-    RNA_ATAC_unpaired_prediction/RNA_ATAC_unpaired_basic
+    RNA_ATAC_unpaired_prediction/RNA_ATAC_unpaired_scButterfly-T
 
-    RNA_ADT_paired_prediction/RNA_ADT_paired_basic
-    RNA_ADT_paired_prediction/RNA_ADT_paired_celltype_amp
-    RNA_ADT_paired_prediction/RNA_ADT_paired_TotalVI_amp
+    RNA_ADT_paired_prediction/RNA_ADT_paired_scButterfly-B
+    RNA_ADT_paired_prediction/RNA_ADT_paired_scButterfly-T
+    RNA_ADT_paired_prediction/RNA_ADT_paired_scButterfly-C
 
-    Perturb_prediction/Perturb_unpaired_basic
+    Perturb_prediction/Perturb_unpaired_scButterfly-T

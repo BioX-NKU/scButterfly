@@ -1,3 +1,8 @@
+[![PyPI](https://img.shields.io/pypi/v/scbutterfly)](https://pypi.org/project/scbutterfly)
+[![Documentation Status](https://readthedocs.org/projects/scbutterfly/badge/?version=latest)](https://scbutterfly.readthedocs.io/en/latest/?badge=stable)
+[![Downloads](https://pepy.tech/badge/scbutterfly)](https://pepy.tech/project/scbutterfly)
+
+
 # scButterfly: A versatile single-cell cross-modality translation method via dual-aligned variational autoencoders
 
 ## Installation
@@ -5,7 +10,7 @@
 It's prefered to create a new environment for scButterfly
 
 ```
-conda create scButterfly python==3.9
+conda create -n scButterfly python==3.9
 conda activate scButterfly
 ```
 
@@ -30,21 +35,32 @@ Installation via Github is also provided
 ```
 git clone https://github.com/Biox-NKU/scButterfly
 cd scButterfly
-python setup.py install
+
+# CUDA 11.6
+pip install scButterfly.whl --extra-index-url https://download.pytorch.org/whl/cu116
+
+# CUDA 11.3
+pip install scButterfly.whl --extra-index-url https://download.pytorch.org/whl/cu113
+
+# CUDA 10.2
+pip install scButterfly.whl --extra-index-url https://download.pytorch.org/whl/cu102
+
+# CPU only
+pip install scButterfly.whl --extra-index-url https://download.pytorch.org/whl/cpu
 ```
 
 ## Quick Start
 
-scButterfly could be easily used following 3 steps: Data Preprocessing, Model training, Predicting and evaluating. More details could be find in [scButterfly documents](http://scbutterfly.readthedocs.io/).
+Illustrating with the translation between  scRNA-seq and scATAC-seq data as an example, scButterfly could be easily used following 3 steps: data preprocessing, model training, predicting and evaluating. More details could be find in [scButterfly documents](http://scbutterfly.readthedocs.io/).
 
-Generate a scButterfly model first for following process:
+Generate a scButterfly model first with following process:
 
 ```python
 from scButterfly.butterfly import Butterfly
 butterfly = Butterfly()
 ```
 
-### 1. Data Preprocessing
+### 1. Data preprocessing
 
 * Before data preprocessing, you should load scRNA-seq and scATAC-seq data via `butterfly.load_data`:
   
@@ -80,19 +96,19 @@ butterfly = Butterfly()
   
 ### 2. Model training
 
-* Before model training, you could choose to use data augmentation or not. If using data augmentation, scButterfly will generate some artificial training sample using cell type labels(if `cell_type` in `adata.obs`) or cluster labels get with Leiden algorithm and [**MultiVI**](https://docs.scvi-tools.org/en/stable/tutorials/notebooks/MultiVI_tutorial.html) method, a single-cell multi-omics data joint analysis method in Python packages [**scvi-tools**](https://docs.scvi-tools.org/en/stable/).
+* Before model training, you could choose to use data augmentation strategy or not. If using data augmentation, scButterfly will generate synthetic samgles with the use of cell-type labels(if `cell_type` in `adata.obs`) or cluster labels get with Leiden algorithm and [**MultiVI**](https://docs.scvi-tools.org/en/stable/tutorials/notebooks/MultiVI_tutorial.html), a single-cell multi-omics data joint analysis method in Python packages [**scvi-tools**](https://docs.scvi-tools.org/en/stable/).
 
   scButterfly provide data augmentation API:
   
   ```python
-  butterfly.augmentation(amp_type)
+  butterfly.augmentation(aug_type)
   ```
 
-  You could choose parameter `amp_type` from `cell_type_augmentation` or `MultiVI_augmentation`, this will cause more training time used, but promise better result for predicting. 
+  You could choose parameter `aug_type` from `cell_type_augmentation` or `MultiVI_augmentation`, this will cause more training time used, but promise better result for predicting. 
   
-  * If you choose `cell_type_augmentation`, scButterfly-T will try to find `cell_type` in `adata.obs`. If failed, it will automaticly transfer to `MultiVI_augmentation`.
-  * If you choose `MultiVI_augmentation`, scButterfly-C will train a MultiVI model first.
-  * If you just want to using original data for training, set `amp_type = None`.
+  * If you choose `cell_type_augmentation`, scButterfly-T (Type) will try to find `cell_type` in `adata.obs`. If failed, it will automaticly transfer to `MultiVI_augmentation`.
+  * If you choose `MultiVI_augmentation`, scButterfly-C (Cluster) will train a MultiVI model first.
+  * If you just want to using original data for scButterfly-B (Basic) training, set `aug_type = None`.
   
 * You could construct a scButterfly model as following:
   
@@ -123,7 +139,7 @@ butterfly = Butterfly()
   
 ### 3. Predicting and evaluating
 
-* scButterfly provide a predicting API, you could get both RNA and ATAC prediction as follow:
+* scButterfly provide a predicting API, you could get predicted profiles as follow:
   
   ```python
   A2R_predict, R2A_predict = butterly.test_model()
@@ -136,11 +152,10 @@ butterfly = Butterfly()
   | output_path   | optional, path for model evaluating output, if None, using './model' as path, default None. |
   | load_model    | optional, the path for load pretrained model, if not load, set it None, default False.      |
   | model_path    | optional, the path for pretrained model, only used if `load_model` is True, default None.   |
-  | test_relation | optional, test the correlation evaluation or not, including **Preason** and **Spearman** correlation for scRNA-seq prediction, **AUROC** and **AUPR** for scATAC-seq prediction, default False.                                                              |
-  | test_cluster  | optional, test the correlation evaluation or not, including **ARI**, **AMI**, **NMI**, **HOM**, **COM**, default False.                                                                                                                                             |
-  | test_figure   | optional, draw the **tSNE** for prediction or not, default False.                           |
-  | output_data   | optional, output the prediction to file or not, if True, output the prediction to `output_path/A2R_predict.h5ad` and `output_path/R2A_predict.h5ad`, default False.                                                                  |
+  | test_cluster  | optional, test the correlation evaluation or not, including **AMI**, **ARI**, **HOM**, **NMI**, default False.|
+  | test_figure   | optional, draw the **tSNE** visualization for prediction or not, default False.             |
+  | output_data   | optional, output the prediction to file or not, if True, output the prediction to `output_path/A2R_predict.h5ad` and `output_path/R2A_predict.h5ad`, default False.                                          |
 
-## Document, tutorial and reproducibility
+## Document, tutorial and source code
 
-### We provide a tutorial and richer document for scButterfly in [scButterfly documents](http://scbutterfly.readthedocs.io/), including more details of provided APIs for customing data preprocessing, model structure and training strategy. We also provide reproducibility of experiment for scButterfly in [reproducibility](https://github.com/BioX-NKU/scButterfly_source), including more detailed source code for scButterfly.
+### We provide a tutorial and richer document for scButterfly in [scButterfly documents](http://scbutterfly.readthedocs.io/), including more details of provided APIs for customing data preprocessing, model structure and training strategy. We also provide source code of experiment for scButterfly in [source code](https://github.com/BioX-NKU/scButterfly_source), including more detailed source code for scButterfly.

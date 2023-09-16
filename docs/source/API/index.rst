@@ -20,7 +20,7 @@ butterfly
     butterfly.Butterfly
     butterfly.Butterfly.load_data
     butterfly.Butterfly.data_preprocessing
-    butterfly.Butterfly.amplification
+    butterfly.Butterfly.augmentation
     butterfly.Butterfly.construct_model
     butterfly.Butterfly.train_model
     butterfly.Butterfly.test_model
@@ -46,6 +46,7 @@ data_processing
     data_processing.inverse_TFIDF
     data_processing.RNA_data_preprocessing
     data_processing.ATAC_data_preprocessing
+    data_processing.CLR_transform
 
 
 draw_cluster

@@ -7,7 +7,7 @@ def calculate_cluster_index(adata):
     """
     Evaluation of cluster index of prediction. 
     Cluster method using Leiden with a default resolution.
-    5 different metrics provided: ARI - Adjusted Rand Index, NMI - Normalized Mutual Information, AMI - Adjusted Mutual Information, HOM - Homogeneity, COM - Completeness.
+    4 different metrics provided: ARI - Adjusted Rand Index, NMI - Normalized Mutual Information, AMI - Adjusted Mutual Information, HOM - Homogeneity
     
     Parameters
     ----------
@@ -24,8 +24,6 @@ def calculate_cluster_index(adata):
         Adjusted Mutual Information.
     HOM: float
         Homogeneity.
-    COM: float
-        Completeness.
     """
     my_logger = create_logger(name='measure performance', ch=True, fh=False, levelname=logging.INFO, overwrite=False)
     if not "neighbors" in adata.uns.keys():
@@ -40,6 +38,5 @@ def calculate_cluster_index(adata):
     AMI = metrics.adjusted_mutual_info_score(adata.obs['cell_type'], adata.obs['leiden'])
     NMI = metrics.normalized_mutual_info_score(adata.obs['cell_type'], adata.obs['leiden'])
     HOM = metrics.homogeneity_score(adata.obs['cell_type'], adata.obs['leiden'])
-    COM = metrics.completeness_score(adata.obs['cell_type'], adata.obs['leiden'])
     
-    return ARI, AMI, NMI, HOM, COM
+    return ARI, AMI, NMI, HOM

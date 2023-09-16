@@ -109,13 +109,13 @@ class Butterfly():
             choose use peaks filtering or not, default True.
 
         fpeaks: float
-            the fpeaks for peaks filtering, is don't filter peaks set it None, default 0.005.
+            filter out the peaks expressed less than fpeaks*n_cells, if don't filter peaks set it None, default 0.005.
 
         tfidf: bool
             choose using TF-IDF transform or not, default True.
 
         normalize: bool
-            choose set data to [0, 1] or not, default True.
+            choose scale data to [0, 1] or not, default True.
 
         save_data: bool
             choose save the processed data or not, default False.
@@ -138,7 +138,7 @@ class Butterfly():
                 n_top_genes=n_top_genes,
                 save_data=save_data,
                 file_path=file_path,
-                logging_path=file_path
+                logging_path=logging_path
                 )
             self.ATAC_data_p = ATAC_data_preprocessing(
                 self.ATAC_data,
@@ -149,29 +149,29 @@ class Butterfly():
                 normalize=normalize,
                 save_data=save_data,
                 file_path=file_path,
-                logging_path=file_path
+                logging_path=logging_path
             )[0]
             self.is_processed = True
             
-    def amplification(
+    def augmentation(
         self,
-        amp_type=None,
+        aug_type=None,
         MultiVI_path=None
     ):
         """
-        Data amplification for Butterfly model.
+        Data augmentation for Butterfly model.
         
         Parameters
         ----------
-        amp_type: str
-            Butterfly support two types of amp_type, "cell_type_amplification" and "MultiVI_amplification". "cell_type_amplification" need "cell_type" in RNA_data.obs and ATAC_data.obs， default None.
+        aug_type: str
+            Butterfly support two types of aug_type, "cell_type_augmentation" and "MultiVI_augmentation". "cell_type_augmentation" need "cell_type" in RNA_data.obs and ATAC_data.obs， default None.
             
         MultiVI_path: str
             path for pretrained MultiVI model, if None, Butterfly will train a MultiVI model first, default None.
 
         """
-        if amp_type == 'cell_type_amplification' and 'cell_type' in self.RNA_data.obs.keys():
-            self.my_logger.info('using data amplification with cell type labels.')
+        if aug_type == 'cell_type_augmentation' and 'cell_type' in self.RNA_data.obs.keys():
+            self.my_logger.info('using data augmentation with cell type labels.')
             copy_count = 3
             random.seed(19193)
             self.ATAC_data.obs.index = [str(i) for i in range(len(self.ATAC_data.obs.index))]
@@ -184,11 +184,11 @@ class Butterfly():
                     self.train_id_r.extend(idx_temp)
                     random.shuffle(idx_temp)
                     self.train_id_a.extend(idx_temp)
-        if amp_type == 'cell_type_amplification' and not 'cell_type' in self.RNA_data.obs.keys():
-            self.my_logger.warning('not find "cell_type" in data.obs, trying to use MultiVI amplification ...')
-            amp_type = 'MultiVI_amplification'
-        if amp_type == 'MultiVI_amplification':
-            self.my_logger.info('using data amplification with MultiVI cluster labels.')
+        if aug_type == 'cell_type_augmentation' and not 'cell_type' in self.RNA_data.obs.keys():
+            self.my_logger.warning('not find "cell_type" in data.obs, trying to use MultiVI augmentation ...')
+            aug_type = 'MultiVI_augmentation'
+        if aug_type == 'MultiVI_augmentation':
+            self.my_logger.info('using data augmentation with MultiVI cluster labels.')
             from scvi_colab import install
             import pandas as pd
             install()
@@ -558,7 +558,6 @@ class Butterfly():
         model_path = None,
         load_model = False,
         output_path = None,
-        test_relation = False,
         test_cluster = False,
         test_figure = False,
         output_data = False
@@ -577,9 +576,6 @@ class Butterfly():
         output_path: str
             file path for model output, default None.
             
-        test_relation: bool
-            test correlation or not, default False.
-            
         test_cluster: bool
             test clustrer index or not, default False.
             
@@ -597,7 +593,6 @@ class Butterfly():
             model_path = model_path,
             load_model = load_model,
             output_path = output_path,
-            test_evaluate = test_relation,
             test_cluster = test_cluster,
             test_figure = test_figure,
             output_data = output_data,

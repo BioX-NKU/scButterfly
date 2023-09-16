@@ -14,7 +14,7 @@
    .. autosummary::
    
       ~Butterfly.__init__
-      ~Butterfly.amplification
+      ~Butterfly.augmentation
       ~Butterfly.construct_model
       ~Butterfly.data_preprocessing
       ~Butterfly.load_data

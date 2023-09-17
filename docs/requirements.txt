@@ -3,6 +3,7 @@ torch
 torchvision
 torchaudio
 scikit-learn
+orbax==0.1.7
 scvi-tools
 scvi-colab
 scipy

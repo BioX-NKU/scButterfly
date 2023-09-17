@@ -7,7 +7,7 @@ Translation between scRNA-seq and scATAC-seq paired data
 
 scButterfly could make translation between scRNA-seq and scATAC-seq paired data using scButterfly model in ``scButterfly.butterfly``.
 
-* `scButterfly-B usage <RNA_ATAC_paired_prediction/RNA_ATAC_scButterfly-B.ipynb>`_
+* `scButterfly-B usage <RNA_ATAC_paired_prediction/RNA_ATAC_paired_scButterfly-B.ipynb>`_
 * `scButterfly-T using augmentation with cell-type labels <RNA_ATAC_paired_prediction/RNA_ATAC_paired_scButterfly-T.ipynb>`_
 * `scButterfly-C using augmentation with MultiVI integrated labels <RNA_ATAC_paired_prediction/RNA_ATAC_paired_scButterfly-C.ipynb>`_
 

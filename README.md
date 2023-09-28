@@ -3,7 +3,7 @@
 [![Downloads](https://pepy.tech/badge/scbutterfly)](https://pepy.tech/project/scbutterfly)
 
 
-# scButterfly: A versatile single-cell cross-modality translation method via dual-aligned variational autoencoders
+# scButterfly: a versatile single-cell cross-modality translation method via dual-aligned variational autoencoders
 
 ## Installation
 

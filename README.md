@@ -49,6 +49,8 @@ pip install scButterfly.whl --extra-index-url https://download.pytorch.org/whl/c
 pip install scButterfly.whl --extra-index-url https://download.pytorch.org/whl/cpu
 ```
 
+This process will take approximately 5 to 10 minutes, depending on the user's computer device and internet connectivition.
+
 ## Quick Start
 
 Illustrating with the translation between  scRNA-seq and scATAC-seq data as an example, scButterfly could be easily used following 3 steps: data preprocessing, model training, predicting and evaluating. More details could be find in [scButterfly documents](http://scbutterfly.readthedocs.io/).
@@ -156,6 +158,8 @@ butterfly = Butterfly()
   | test_figure   | optional, draw the **tSNE** visualization for prediction or not, default False.             |
   | output_data   | optional, output the prediction to file or not, if True, output the prediction to `output_path/A2R_predict.h5ad` and `output_path/R2A_predict.h5ad`, default False.                                          |
 
-## Document, tutorial and source code
+## Demo, document, tutorial and source code
 
-### We provide a tutorial and richer document for scButterfly in [scButterfly documents](http://scbutterfly.readthedocs.io/), including more details of provided APIs for customing data preprocessing, model structure and training strategy. We also provide source code of experiment for scButterfly in [source code](https://github.com/BioX-NKU/scButterfly_source), including more detailed source code for scButterfly.
+### We provide demos of basic scButterfly model and two variants (scButterfly-C and scButterfly-T) illustrating with CL datasets in [scButterfly-B usage](https://scbutterfly.readthedocs.io/en/latest/Tutorial/RNA_ATAC_paired_prediction/RNA_ATAC_paired_scButterfly-B.html), [scButterfly-C usage](https://scbutterfly.readthedocs.io/en/latest/Tutorial/RNA_ATAC_paired_prediction/RNA_ATAC_paired_scButterfly-C.html), and [scButterfly-T usage](https://scbutterfly.readthedocs.io/en/latest/Tutorial/RNA_ATAC_paired_prediction/RNA_ATAC_paired_scButterfly-T.html), with data presented in [Google drive](https://drive.google.com/drive/folders/1CAZp11EF1t6szAc__m2ceNbMd5KlbqPJ). scButterfly-B, scButterfly-C and scButterfly-T repectively take about 12, 24, 18 minutes for the whole process (containing pre-processing, data augmentation, model training and evaluating) on desktop computer with NVIDIA RTX A6000 GPU.
+
+### We also provide richer tutorials and documents for scButterfly in [scButterfly documents](http://scbutterfly.readthedocs.io/), including more details of provided APIs for customing data preprocessing, model structure and training strategy. The source code of experiments for scButterfly is available at [source code](https://github.com/BioX-NKU/scButterfly_source), including more detailed source code for scButterfly.

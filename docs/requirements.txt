@@ -9,6 +9,8 @@ seaborn
 matplotlib
 nbsphinx
 sphinx_autodoc_typehints
+sphinx_rtd_theme
+nbsphinx
 leidenalg
 pybedtools
 adjusttext

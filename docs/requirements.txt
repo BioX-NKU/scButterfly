@@ -11,6 +11,7 @@ nbsphinx
 sphinx_autodoc_typehints
 sphinx_rtd_theme
 nbsphinx
+recommonmark
 leidenalg
 pybedtools
 adjusttext

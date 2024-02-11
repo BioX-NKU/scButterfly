@@ -326,7 +326,7 @@ def unpaired_split_dataset_perturb(
     return id_list
 
 
-def unpaired_split_dataset_perturb_ot_no_reusing(
+def unpaired_split_dataset_perturb_no_reusing(
     RNA_data, 
     ATAC_data,
     sc_data,

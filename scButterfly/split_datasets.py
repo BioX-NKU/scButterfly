@@ -178,22 +178,6 @@ def bm_batch_split_dataset(
     ATAC_data, 
     seed = 19193
 ):
-    """
-    Split datasets into train, validation and test part using different cell types.
-    
-    Parameters
-    ----------
-    RNA_data
-        full RNA data for spliting.
-        
-    ATAC_data
-        full ATAC data for spliting.
-        
-    seed
-        random seed use to split datasets, if don't give random seed, set it None.
-        
-    """ 
-    
     if not seed is None:
         setup_seed(seed)
     
@@ -226,22 +210,7 @@ def unpaired_split_dataset_perturb(
     ATAC_data, 
     seed = 19193
 ):
-    """
-    Split datasets into train, validation and test part using different cell types.
-    
-    Parameters
-    ----------
-    RNA_data
-        full RNA data for spliting.
-        
-    ATAC_data
-        full ATAC data for spliting.
-        
-    seed
-        random seed use to split datasets, if don't give random seed, set it None.
-        
-    """ 
-    
+
     import ot
     
     if not seed is None:

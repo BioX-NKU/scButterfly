@@ -7,6 +7,8 @@ import scanpy as sc
 import anndata as ad
 from scButterfly.logger import *
 from scButterfly.model_utlis import *
+from scButterfly.calculate_cluster import *
+from scButterfly.split_datasets import *
 import warnings
 import torch
 import torch.nn as nn
@@ -191,9 +193,7 @@ class Butterfly():
             install()
             import scvi
             import sys
-            from calculate_cluster import *
             import scipy.sparse as sp
-            from split_datasets import *
             
             copy_count = 3
             random.seed(19193)

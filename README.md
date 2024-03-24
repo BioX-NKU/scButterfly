@@ -37,16 +37,16 @@ git clone https://github.com/Biox-NKU/scButterfly
 cd scButterfly
 
 # CUDA 11.6
-pip install scButterfly-0.0.6-py3-none-any.whl --extra-index-url https://download.pytorch.org/whl/cu116
+pip install scButterfly-0.0.7-py3-none-any.whl --extra-index-url https://download.pytorch.org/whl/cu116
 
 # CUDA 11.3
-pip install scButterfly-0.0.6-py3-none-any.whl --extra-index-url https://download.pytorch.org/whl/cu113
+pip install scButterfly-0.0.7-py3-none-any.whl --extra-index-url https://download.pytorch.org/whl/cu113
 
 # CUDA 10.2
-pip install scButterfly-0.0.6-py3-none-any.whl --extra-index-url https://download.pytorch.org/whl/cu102
+pip install scButterfly-0.0.7-py3-none-any.whl --extra-index-url https://download.pytorch.org/whl/cu102
 
 # CPU only
-pip install scButterfly-0.0.6-py3-none-any.whl --extra-index-url https://download.pytorch.org/whl/cpu
+pip install scButterfly-0.0.7-py3-none-any.whl --extra-index-url https://download.pytorch.org/whl/cpu
 ```
 
 This process will take approximately 5 to 10 minutes, depending on the user's computer device and internet connectivition.

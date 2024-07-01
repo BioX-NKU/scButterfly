@@ -3,7 +3,7 @@
 [![Downloads](https://pepy.tech/badge/scbutterfly)](https://pepy.tech/project/scbutterfly)
 
 
-# scButterfly: A versatile single-cell cross-modality translation method via dual-aligned variational autoencoders
+# scButterfly: a versatile single-cell cross-modality translation method via dual-aligned variational autoencoders
 
 ## Installation
 
@@ -17,17 +17,7 @@ conda activate scButterfly
 scButterfly is available on PyPI, and could be installed using
 
 ```
-# CUDA 11.6
-pip install scButterfly --extra-index-url https://download.pytorch.org/whl/cu116
-
-# CUDA 11.3
-pip install scButterfly --extra-index-url https://download.pytorch.org/whl/cu113
-
-# CUDA 10.2
-pip install scButterfly --extra-index-url https://download.pytorch.org/whl/cu102
-
-# CPU only
-pip install scButterfly --extra-index-url https://download.pytorch.org/whl/cpu
+pip install scButterfly
 ```
 
 Installation via Github is also provided
@@ -35,19 +25,10 @@ Installation via Github is also provided
 ```
 git clone https://github.com/Biox-NKU/scButterfly
 cd scButterfly
-
-# CUDA 11.6
-pip install scButterfly.whl --extra-index-url https://download.pytorch.org/whl/cu116
-
-# CUDA 11.3
-pip install scButterfly.whl --extra-index-url https://download.pytorch.org/whl/cu113
-
-# CUDA 10.2
-pip install scButterfly.whl --extra-index-url https://download.pytorch.org/whl/cu102
-
-# CPU only
-pip install scButterfly.whl --extra-index-url https://download.pytorch.org/whl/cpu
+pip install scButterfly-0.0.9-py3-none-any.whl
 ```
+
+This process will take approximately 5 to 10 minutes, depending on the user's computer device and internet connectivition.
 
 ## Quick Start
 
@@ -62,7 +43,7 @@ butterfly = Butterfly()
 
 ### 1. Data preprocessing
 
-* Before data preprocessing, you should load scRNA-seq and scATAC-seq data via `butterfly.load_data`:
+* Before data preprocessing, you should load the **raw count matrix** of scRNA-seq and scATAC-seq data via `butterfly.load_data`:
   
   ```python
   butterfly.load_data(RNA_data, ATAC_data, train_id, test_id, validation_id)
@@ -156,6 +137,8 @@ butterfly = Butterfly()
   | test_figure   | optional, draw the **tSNE** visualization for prediction or not, default False.             |
   | output_data   | optional, output the prediction to file or not, if True, output the prediction to `output_path/A2R_predict.h5ad` and `output_path/R2A_predict.h5ad`, default False.                                          |
 
-## Document, tutorial and source code
+## Demo, document, tutorial and source code
 
-### We provide a tutorial and richer document for scButterfly in [scButterfly documents](http://scbutterfly.readthedocs.io/), including more details of provided APIs for customing data preprocessing, model structure and training strategy. We also provide source code of experiment for scButterfly in [source code](https://github.com/BioX-NKU/scButterfly_source), including more detailed source code for scButterfly.
+### We provide demos of basic scButterfly model and two variants (scButterfly-C and scButterfly-T) illustrating with CL datasets in [scButterfly-B usage](https://scbutterfly.readthedocs.io/en/latest/Tutorial/RNA_ATAC_paired_prediction/RNA_ATAC_paired_scButterfly-B.html), [scButterfly-C usage](https://scbutterfly.readthedocs.io/en/latest/Tutorial/RNA_ATAC_paired_prediction/RNA_ATAC_paired_scButterfly-C.html), and [scButterfly-T usage](https://scbutterfly.readthedocs.io/en/latest/Tutorial/RNA_ATAC_paired_prediction/RNA_ATAC_paired_scButterfly-T.html), with data presented in [Google drive](https://drive.google.com/drive/folders/1CAZp11EF1t6szAc__m2ceNbMd5KlbqPJ). scButterfly-B, scButterfly-C and scButterfly-T repectively take about 12, 24, 18 minutes for the whole process (containing pre-processing, data augmentation, model training and evaluating) on desktop computer with NVIDIA RTX A6000 GPU.
+
+### We also provide richer tutorials and documents for scButterfly in [scButterfly documents](http://scbutterfly.readthedocs.io/), including more details of provided APIs for customing data preprocessing, model structure and training strategy. The source code of experiments for scButterfly is available at [source code](https://github.com/BioX-NKU/scButterfly_source), including more detailed source code for scButterfly.

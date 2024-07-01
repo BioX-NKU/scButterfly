@@ -406,3 +406,254 @@ class Single_Translator(nn.Module):
         
         latent_layer_out = self.decoder_act(self.decoder_bn(self.decoder_l(latent_layer)))
         return latent_layer_out, latent_layer_mu, latent_layer_d
+
+class Background_Translator(nn.Module):
+    # translator for embedding space
+    def __init__(
+        self,
+        translator_input_dim_r: int, 
+        translator_input_dim_a: int, 
+        translator_embed_dim: int, 
+        translator_embed_act_list: list,
+        ):
+        """
+        Parameters
+        ----------
+        translator_input_dim_r
+            dimension of input from RNA encoder for translator
+            
+        translator_input_dim_a
+            dimension of input from ATAC encoder for translator
+            
+        translator_embed_dim
+            dimension of embedding space for translator
+            
+        translator_embed_act_list
+            activation list for translator, involving [mean_activation, log_var_activation, decoder_activation]
+            
+        """
+        
+        super(Background_Translator, self).__init__()
+        
+        mean_activation, log_var_activation, decoder_activation = translator_embed_act_list
+        
+        self.RNA_encoder_l_mu = nn.Linear(translator_input_dim_r, translator_embed_dim)
+        nn.init.xavier_uniform_(self.RNA_encoder_l_mu.weight)
+        self.RNA_encoder_bn_mu = nn.BatchNorm1d(translator_embed_dim)
+        self.RNA_encoder_act_mu = mean_activation
+        
+        self.ATAC_encoder_l_mu = nn.Linear(translator_input_dim_a, translator_embed_dim)
+        nn.init.xavier_uniform_(self.ATAC_encoder_l_mu.weight)
+        self.ATAC_encoder_bn_mu = nn.BatchNorm1d(translator_embed_dim)
+        self.ATAC_encoder_act_mu = mean_activation
+        
+        self.RNA_encoder_l_d = nn.Linear(translator_input_dim_r, translator_embed_dim)
+        nn.init.xavier_uniform_(self.RNA_encoder_l_d.weight)
+        self.RNA_encoder_bn_d = nn.BatchNorm1d(translator_embed_dim)
+        self.RNA_encoder_act_d = log_var_activation
+        
+        self.ATAC_encoder_l_d = nn.Linear(translator_input_dim_a, translator_embed_dim)
+        nn.init.xavier_uniform_(self.ATAC_encoder_l_d.weight)
+        self.ATAC_encoder_bn_d = nn.BatchNorm1d(translator_embed_dim)
+        self.ATAC_encoder_act_d = log_var_activation
+        
+        self.RNA_decoder_l = nn.Linear(translator_embed_dim, translator_input_dim_r)
+        nn.init.xavier_uniform_(self.RNA_decoder_l.weight)
+        self.RNA_decoder_bn = nn.BatchNorm1d(translator_input_dim_r)
+        self.RNA_decoder_act = decoder_activation
+        
+        self.ATAC_decoder_l = nn.Linear(translator_embed_dim, translator_input_dim_a)
+        nn.init.xavier_uniform_(self.ATAC_decoder_l.weight)
+        self.ATAC_decoder_bn = nn.BatchNorm1d(translator_input_dim_a)
+        self.ATAC_decoder_act = decoder_activation
+        
+        self.background_pro_alpha = nn.Parameter(torch.randn(1, translator_input_dim_a))
+        self.background_pro_log_beta = nn.Parameter(torch.clamp(torch.randn(1, translator_input_dim_a), -10, 1))
+        
+        self.scale_parameters_l = nn.Linear(translator_embed_dim, translator_embed_dim)
+        self.scale_parameters_bn = nn.BatchNorm1d(translator_embed_dim)
+        self.scale_parameters_act = mean_activation
+        self.pi_l = nn.Linear(translator_embed_dim, 1)
+        self.pi_bn = nn.BatchNorm1d(1)
+        self.pi_act = nn.Sigmoid()
+        
+    def reparameterize(self, mu, sigma):
+        sigma = torch.exp(sigma/2)
+        eps = torch.randn_like(sigma)
+        return mu + eps * sigma
+    
+    def forward_adt(self, adt_latent, forward_type):
+        
+        if forward_type == 'train':
+            background_pro_alpha = self.background_pro_alpha
+            background_pro_log_beta = self.background_pro_log_beta
+
+            beta = self.reparameterize(background_pro_alpha, background_pro_log_beta)
+
+            alpha = self.scale_parameters_act(self.scale_parameters_bn(self.scale_parameters_l(adt_latent)))+1
+
+            pi = self.pi_act(self.pi_bn(self.pi_l(adt_latent)))
+            v = torch.bernoulli(pi)
+
+            return beta.mul(v)+beta.mul(alpha.mul(1-v))
+        if forward_type == 'test':
+            #background_pro_alpha = batch.mm(self.background_pro_alpha)
+            #background_pro_log_beta = batch.mm(self.background_pro_log_beta)
+            background_pro_alpha = self.background_pro_alpha.mean(dim=0)
+            beta = background_pro_alpha
+            #beta = self.reparameterize(background_pro_alpha, background_pro_log_beta)
+
+            alpha = self.scale_parameters_act(self.scale_parameters_bn(self.scale_parameters_l(adt_latent)))+1
+
+            pi = self.pi_act(self.pi_bn(self.pi_l(adt_latent)))
+            
+            zero = torch.zeros_like(pi)
+            one = torch.ones_like(pi)
+            
+            #v = torch.bernoulli(pi)
+            v = torch.where(pi <= 0.5, zero, pi)
+            v = torch.where(pi > 0.5, one, v)
+
+            return beta.mul(v)+beta.mul(alpha.mul(1-v))
+        
+    def forward_with_RNA(self, x, forward_type):
+            
+        latent_layer_mu = self.RNA_encoder_act_mu(self.RNA_encoder_bn_mu(self.RNA_encoder_l_mu(x)))
+        latent_layer_d = self.RNA_encoder_act_d(self.RNA_encoder_bn_d(self.RNA_encoder_l_d(x)))
+        
+        if forward_type == 'test':
+            latent_layer = latent_layer_mu
+        elif forward_type == 'train':
+            latent_layer = self.reparameterize(latent_layer_mu, latent_layer_d)
+        
+        latent_layer_R_out = self.RNA_decoder_act(self.RNA_decoder_bn(self.RNA_decoder_l(latent_layer)))
+        #latent_layer_A_out = self.ATAC_decoder_act(self.ATAC_decoder_bn(self.ATAC_decoder_l(self.forward_adt(latent_layer))))
+        latent_layer_A_out = self.ATAC_decoder_act(self.ATAC_decoder_bn(self.ATAC_decoder_l(latent_layer)))
+
+        return latent_layer_R_out, latent_layer_A_out, latent_layer_mu, latent_layer_d
+    
+    def forward_with_ATAC(self, x, forward_type):
+        # the function with ATAC input and RNA, ATAC output 
+            
+        latent_layer = self.forward_adt(x, forward_type)
+        
+        latent_layer_R_out = self.RNA_decoder_act(self.RNA_decoder_bn(self.RNA_decoder_l(latent_layer)))
+        #latent_layer_A_out = self.ATAC_decoder_act(self.ATAC_decoder_bn(self.ATAC_decoder_l(self.forward_adt(latent_layer))))
+        latent_layer_A_out = self.ATAC_decoder_act(self.ATAC_decoder_bn(self.ATAC_decoder_l(latent_layer)))
+
+        return latent_layer_R_out, latent_layer_A_out, latent_layer, latent_layer
+    
+    def train_model(self, x, input_type):
+        if input_type == 'RNA':
+            latent_layer_R_out, latent_layer_A_out, latent_layer_mu, latent_layer_d = self.forward_with_RNA(x, 'train')
+            return latent_layer_R_out, latent_layer_A_out, latent_layer_mu, latent_layer_d
+        elif input_type == 'ATAC':
+            latent_layer_R_out, latent_layer_A_out, latent_layer_mu, latent_layer_d = self.forward_with_ATAC(x, 'train')
+            return latent_layer_R_out, latent_layer_A_out, latent_layer_mu, latent_layer_d
+        
+    def test_model(self, x, input_type):
+        if input_type == 'RNA':
+            latent_layer_R_out, latent_layer_A_out, latent_layer_mu, latent_layer_d = self.forward_with_RNA(x, 'test')
+            return latent_layer_R_out, latent_layer_A_out, latent_layer_mu, latent_layer_d
+        elif input_type == 'ATAC':
+            latent_layer_R_out, latent_layer_A_out, latent_layer_mu, latent_layer_d = self.forward_with_ATAC(x, 'test')
+            return latent_layer_R_out, latent_layer_A_out, latent_layer_mu, latent_layer_d
+    
+    
+class Background_Single_Translator(nn.Module):
+    # translator for embedding space
+    def __init__(
+        self,
+        translator_input_dim: int,  
+        translator_embed_dim: int, 
+        translator_embed_act_list: list, 
+        ):
+        """
+        Parameters
+        ----------
+        translator_input_dim
+            dimension of input from encoder for translator
+            
+        translator_embed_dim
+            dimension of embedding space for translator
+            
+        translator_embed_act_list
+            activation list for translator, involving [mean_activation, log_var_activation, decoder_activation]
+            
+        """
+        
+        super(Background_Single_Translator, self).__init__()
+        
+        mean_activation, log_var_activation, decoder_activation = translator_embed_act_list
+        
+        self.encoder_l_mu = nn.Linear(translator_input_dim, translator_embed_dim)
+        nn.init.xavier_uniform_(self.encoder_l_mu.weight)
+        self.encoder_bn_mu = nn.BatchNorm1d(translator_embed_dim)
+        self.encoder_act_mu = mean_activation
+        
+        self.encoder_l_d = nn.Linear(translator_input_dim, translator_embed_dim)
+        nn.init.xavier_uniform_(self.encoder_l_d.weight)
+        self.encoder_bn_d = nn.BatchNorm1d(translator_embed_dim)
+        self.encoder_act_d = log_var_activation
+
+        self.decoder_l = nn.Linear(translator_embed_dim, translator_input_dim)
+        nn.init.xavier_uniform_(self.decoder_l.weight)
+        self.decoder_bn = nn.BatchNorm1d(translator_input_dim)
+        self.decoder_act = decoder_activation
+        
+        self.background_pro_alpha = nn.Parameter(torch.randn(1, translator_input_dim))
+        self.background_pro_log_beta = nn.Parameter(torch.clamp(torch.randn(1, translator_input_dim), -10, 1))
+        
+        self.scale_parameters_l = nn.Linear(translator_embed_dim, translator_embed_dim)
+        self.scale_parameters_bn = nn.BatchNorm1d(translator_embed_dim)
+        self.scale_parameters_act = mean_activation
+        self.pi_l = nn.Linear(translator_embed_dim, 1)
+        self.pi_bn = nn.BatchNorm1d(1)
+        self.pi_act = nn.Sigmoid()
+    
+    def reparameterize(self, mu, sigma):
+        sigma = torch.exp(sigma/2)
+        eps = torch.randn_like(sigma)
+        return mu + eps * sigma
+    
+    def forward_adt(self, adt_latent, forward_type):
+        
+        if forward_type == 'train':
+            background_pro_alpha = self.background_pro_alpha
+            background_pro_log_beta = self.background_pro_log_beta
+
+            beta = self.reparameterize(background_pro_alpha, background_pro_log_beta)
+
+            alpha = self.scale_parameters_act(self.scale_parameters_bn(self.scale_parameters_l(adt_latent)))+1
+
+            pi = self.pi_act(self.pi_bn(self.pi_l(adt_latent)))
+            v = torch.bernoulli(pi)
+
+            return beta.mul(v)+beta.mul(alpha.mul(1-v))
+        if forward_type == 'test':
+            #background_pro_alpha = batch.mm(self.background_pro_alpha)
+            #background_pro_log_beta = batch.mm(self.background_pro_log_beta)
+            background_pro_alpha = self.background_pro_alpha.mean(dim=0)
+            beta = background_pro_alpha
+            #beta = self.reparameterize(background_pro_alpha, background_pro_log_beta)
+
+            alpha = self.scale_parameters_act(self.scale_parameters_bn(self.scale_parameters_l(adt_latent)))+1
+
+            pi = self.pi_act(self.pi_bn(self.pi_l(adt_latent)))
+            
+            zero = torch.zeros_like(pi)
+            one = torch.ones_like(pi)
+            
+            #v = torch.bernoulli(pi)
+            v = torch.where(pi <= 0.5, zero, pi)
+            v = torch.where(pi > 0.5, one, v)
+
+            return beta.mul(alpha.mul(1-v))
+    
+    def forward(self, x, forward_type):
+            
+        latent_layer = self.forward_adt(x, forward_type)
+        
+        #latent_layer_out = self.decoder_act(self.decoder_bn(self.decoder_l(self.forward_adt(latent_layer))))
+        latent_layer_out = self.decoder_act(self.decoder_bn(self.decoder_l(latent_layer)))
+        return latent_layer_out, latent_layer, latent_layer

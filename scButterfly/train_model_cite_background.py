@@ -18,7 +18,7 @@ from scButterfly.logger import *
 
 
 class Model():
-    def __init__(self,        
+    def __init__(self,
         RNA_data,
         ATAC_data,        
         chrom_list: list,
@@ -34,7 +34,7 @@ class Model():
         R_encoder_act_list: list = [nn.LeakyReLU(), nn.LeakyReLU()],
         A_encoder_act_list: list = [nn.LeakyReLU(), nn.LeakyReLU()],
         R_decoder_act_list: list = [nn.LeakyReLU(), nn.LeakyReLU()],
-        A_decoder_act_list: list = [nn.LeakyReLU(), nn.Sigmoid()],
+        A_decoder_act_list: list = [nn.LeakyReLU(), nn.Identity()],
         translator_embed_dim: int = 128, 
         translator_input_dim_r: int = 128,
         translator_input_dim_a: int = 128,
@@ -45,7 +45,7 @@ class Model():
         discriminator_act_list: list = [nn.Sigmoid()],
         dropout_rate: float = 0.1,
         R_noise_rate: float = 0.5,
-        A_noise_rate: float = 0.3,
+        A_noise_rate: float = 0,
     ):
         """
         Main model. Some parameters need information about data, please see in Tutorial.
@@ -56,7 +56,7 @@ class Model():
             RNA data for model training and testing.
             
         ATAC_data: Anndata
-            ATAC data for model training and testing.
+            ADT data for model training and testing.
 
         chrom_list: list
             list of peaks count for each chromosomes.
@@ -68,37 +68,37 @@ class Model():
             dimension list of RNA encoder, length equal to R_encoder_nlayer + 1, the first equal to RNA data dimension, the last equal to embedding dimension.
             
         A_encoder_dim_list: list
-            dimension list of ATAC encoder, length equal to A_encoder_nlayer + 1, the first equal to RNA data dimension, the last equal to embedding dimension.
+            dimension list of ADT encoder, length equal to A_encoder_nlayer + 1, the first equal to RNA data dimension, the last equal to embedding dimension.
             
         R_decoder_dim_list: list
             dimension list of RNA decoder, length equal to R_decoder_nlayer + 1, the last equal to embedding dimension, the first equal to RNA data dimension.
             
         A_decoder_dim_list: list
-            dimension list of ATAC decoder, length equal to A_decoder_nlayer + 1, the last equal to embedding dimension, the first equal to RNA data dimension.
+            dimension list of ADT decoder, length equal to A_decoder_nlayer + 1, the last equal to embedding dimension, the first equal to RNA data dimension.
             
         R_encoder_nlayer: int
             layer counts of RNA encoder, default 2.
             
         A_encoder_nlayer: int
-            layer counts of ATAC encoder, default 2.
+            layer counts of ADT encoder, default 2.
             
         R_decoder_nlayer: int
             layer counts of RNA decoder, default 2.
             
         A_decoder_nlayer: int
-            layer counts of ATAC decoder, default 2.
+            layer counts of ADT decoder, default 2.
             
         R_encoder_act_list: list
             activation list of RNA encoder, length equal to R_encoder_nlayer, default [nn.LeakyReLU(), nn.LeakyReLU()].
             
         A_encoder_act_list: list
-            activation list of ATAC encoder, length equal to A_encoder_nlayer, default [nn.LeakyReLU(), nn.LeakyReLU()].
+            activation list of ADT encoder, length equal to A_encoder_nlayer, default [nn.LeakyReLU(), nn.LeakyReLU()].
             
         R_decoder_act_list: list
             activation list of RNA decoder, length equal to R_decoder_nlayer, default [nn.LeakyReLU(), nn.LeakyReLU()].
             
         A_decoder_act_list: list
-            activation list of ATAC decoder, length equal to A_decoder_nlayer, default [nn.LeakyReLU(), nn.Sigmoid()].
+            activation list of ADT decoder, length equal to A_decoder_nlayer, default [nn.LeakyReLU(), nn.Sigmoid()].
             
         translator_embed_dim: int
             dimension of embedding space for translator, default 128.
@@ -107,7 +107,7 @@ class Model():
             dimension of input from RNA encoder for translator, default 128.
             
         translator_input_dim_a: int
-            dimension of input from ATAC encoder for translator, default 128.
+            dimension of input from ADT encoder for translator, default 128.
             
         translator_embed_act_list: list
             activation list for translator, involving [mean_activation, log_var_activation, decoder_activation], default [nn.LeakyReLU(), nn.LeakyReLU(), nn.LeakyReLU()].
@@ -131,7 +131,7 @@ class Model():
             rate of set part of RNA input data to 0, default 0.5.
             
         A_noise_rate: float
-            rate of set part of ATAC input data to 0, default 0.3.
+            rate of set part of ADT input data to 0, default 0.
 
         """
         if not logging_path is None:
@@ -173,11 +173,10 @@ class Model():
             dropout_rate = dropout_rate,
             noise_rate = R_noise_rate)
 
-        self.ATAC_encoder = Split_Chrom_Encoder_block(
+        self.ATAC_encoder = NetBlock(
             nlayer = A_encoder_nlayer,
             dim_list = A_encoder_dim_list,
             act_list = A_encoder_act_list,
-            chrom_list = chrom_list,
             dropout_rate = dropout_rate,
             noise_rate = A_noise_rate)
             
@@ -188,11 +187,10 @@ class Model():
             dropout_rate = dropout_rate,
             noise_rate = 0)
             
-        self.ATAC_decoder = Split_Chrom_Decoder_block(
+        self.ATAC_decoder = NetBlock(
             nlayer = A_decoder_nlayer,
             dim_list = A_decoder_dim_list,
             act_list = A_decoder_act_list,
-            chrom_list = chrom_list,
             dropout_rate = dropout_rate,
             noise_rate = 0)
         
@@ -200,13 +198,13 @@ class Model():
             translator_input_dim = translator_input_dim_r, 
             translator_embed_dim = translator_embed_dim, 
             translator_embed_act_list = translator_embed_act_list)
+      
+        self.A_translator = Background_Single_Translator(
+              translator_input_dim = translator_input_dim_a, 
+              translator_embed_dim = translator_embed_dim, 
+              translator_embed_act_list = translator_embed_act_list)
         
-        self.A_translator = Single_Translator(
-            translator_input_dim = translator_input_dim_a, 
-            translator_embed_dim = translator_embed_dim, 
-            translator_embed_act_list = translator_embed_act_list)
-        
-        self.translator = Translator(
+        self.translator = Background_Translator(
             translator_input_dim_r = translator_input_dim_r, 
             translator_input_dim_a = translator_input_dim_a, 
             translator_embed_dim = translator_embed_dim, 
@@ -247,7 +245,8 @@ class Model():
         self.ATAC_data_var = RNA_data.var
         self.RNA_data = RNA_data.X.toarray()
         self.ATAC_data = ATAC_data.X.toarray()
-    
+        self.num_workers = 0
+        
     def set_train(self):
         self.RNA_encoder.train()
         self.RNA_decoder.train()
@@ -285,9 +284,8 @@ class Model():
         latent_layer, mu, d = self.A_translator(self.ATAC_encoder(ATAC_input), forward_type)
         predict_ATAC = self.ATAC_decoder(latent_layer)
         reconstruct_loss = a_loss(predict_ATAC, ATAC_input)
-        kl_div_a = - 0.5 * torch.mean(1 + d - mu.pow(2) - d.exp())
-        loss = reconstruct_loss + kl_div_w * kl_div_a
-        return loss, reconstruct_loss, kl_div_a
+        loss = reconstruct_loss
+        return loss, reconstruct_loss, reconstruct_loss
         
        
     def forward_translator(self, batch_samples, RNA_input_dim, ATAC_input_dim, a_loss, r_loss, loss_weight, forward_type, kl_div_mean=False):
@@ -319,16 +317,17 @@ class Model():
         # kl divergence
         if kl_div_mean:
             kl_div_r = - 0.5 * torch.mean(1 + sigma_r - mu_r.pow(2) - sigma_r.exp())
-            kl_div_a = - 0.5 * torch.mean(1 + sigma_a - mu_a.pow(2) - sigma_a.exp())
+            #kl_div_a = - 0.5 * torch.mean(1 + sigma_a - mu_a.pow(2) - sigma_a.exp())
         else:
             kl_div_r = torch.clamp(- 0.5 * torch.sum(1 + sigma_r - mu_r.pow(2) - sigma_r.exp()), 0, 10000)
-            kl_div_a = torch.clamp(- 0.5 * torch.sum(1 + sigma_a - mu_a.pow(2) - sigma_a.exp()), 0, 10000)
+            #kl_div_a = torch.clamp(- 0.5 * torch.sum(1 + sigma_a - mu_a.pow(2) - sigma_a.exp()), 0, 10000)
         
         # calculate the loss
         r_loss_w, a_loss_w, d_loss_w, kl_div_R, kl_div_A, kl_div_w = loss_weight
         reconstruct_loss = r_loss_w * (lossR2R + lossA2R) + a_loss_w * (lossR2A + lossA2A)
 
-        kl_div = kl_div_r + kl_div_a
+        #kl_div = kl_div_r + kl_div_a
+        kl_div = kl_div_r
         
         loss_g = kl_div_w * kl_div + reconstruct_loss
 
@@ -351,7 +350,7 @@ class Model():
 
         batch_size = batch_samples.shape[0]
 
-        # 1 menas a real data 0 menas a generated data, here use a soft label
+        # 1 means a real data 0 means a generated data, here use a soft label
         temp1 = np.random.rand(batch_size)
         temp = [0 for item in temp1]
         for i in range(len(temp1)):
@@ -409,7 +408,7 @@ class Model():
         patience: int = 50,
         batch_size: int = 64,
         r_loss = nn.MSELoss(size_average=True),
-        a_loss = nn.BCELoss(size_average=True),
+        a_loss = nn.MSELoss(size_average=True),
         d_loss = nn.BCELoss(size_average=True),
         output_path: str = None,
         seed: int = 19193,
@@ -432,31 +431,31 @@ class Model():
             list of RNA data cell ids for training.
             
         train_id_a: list
-            list of ATAC data cell ids for training.
+            list of ADT data cell ids for training.
             
         validation_id_r: list
             list of RNA data cell ids for validation.
         
         validation_id_a: list
-            list of ATAC data cell ids for validation.
+            list of ADT data cell ids for validation.
 
         R_encoder_lr: float
             learning rate of RNA encoder, default 0.001.
             
         A_encoder_lr: float
-            learning rate of ATAC encoder, default 0.001.
+            learning rate of ADT encoder, default 0.001.
             
         R_decoder_lr: float
             learning rate of RNA decoder, default 0.001.
             
         A_decoder_lr: float
-            learning rate of ATAC decoder, default 0.001.
+            learning rate of ADT decoder, default 0.001.
        
         R_translator_lr: float
             learning rate of RNA pretrain translator, default 0.001.
             
         A_translator_lr: float
-            learning rate of ATAC pretrain translator, default 0.001.
+            learning rate of ADT pretrain translator, default 0.001.
             
         translator_lr: float
             learning rate of translator, default 0.001.
@@ -468,7 +467,7 @@ class Model():
             max epoch for pretrain RNA autoencoder, default 100.
             
         A2A_pretrain_epoch: int
-            max epoch for pretrain ATAC autoencoder, default 100.
+            max epoch for pretrain ADT autoencoder, default 100.
             
         lock_encoder_and_decoder: bool
             lock the pretrained encoder and decoder or not, default False.
@@ -486,7 +485,7 @@ class Model():
             loss function for RNA reconstruction, default nn.MSELoss(size_average=True).
             
         a_loss
-            loss function for ATAC reconstruction, default nn.BCELoss(size_average=True).
+            loss function for ADT reconstruction, default nn.MSELoss(size_average=True).
             
         d_loss
             loss function for discriminator, default nn.BCELoss(size_average=True).
@@ -504,7 +503,7 @@ class Model():
             epoch of linear weight warm up for kl divergence in RNA pretrain, default 50.
         
         A_pretrain_kl_warmup: int
-            epoch of linear weight warm up for kl divergence in ATAC pretrain, default 50.
+            epoch of linear weight warm up for kl divergence in ADT pretrain, default 50.
         
         translation_kl_warmup: int
             epoch of linear weight warm up for kl divergence in translator pretrain, default 50.
@@ -577,10 +576,10 @@ class Model():
         self.validation_dataset = RNA_ATAC_dataset(self.RNA_data, self.ATAC_data, validation_id_r, validation_id_a)
 
         if cell_count % batch_size == 1:
-            self.train_dataloader = DataLoader(self.train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, drop_last=True)
+            self.train_dataloader = DataLoader(self.train_dataset, batch_size=batch_size, shuffle=True, num_workers=self.num_workers, drop_last=True)
         else:
-            self.train_dataloader = DataLoader(self.train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-        self.validation_dataloader = DataLoader(self.validation_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+            self.train_dataloader = DataLoader(self.train_dataset, batch_size=batch_size, shuffle=True, num_workers=self.num_workers)
+        self.validation_dataloader = DataLoader(self.validation_dataset, batch_size=batch_size, shuffle=False, num_workers=self.num_workers)
         
         self.optimizer_R_encoder = torch.optim.Adam(self.RNA_encoder.parameters(), lr=R_encoder_lr)
         self.optimizer_A_encoder = torch.optim.Adam(self.ATAC_encoder.parameters(), lr=A_encoder_lr, weight_decay=0)
@@ -600,7 +599,7 @@ class Model():
         if not os.path.exists(output_path + '/model'):
             os.mkdir(output_path + '/model')
         
-        """ pretrain for RNA and ATAC """
+        """ pretrain for RNA and ADT """
         my_logger.info('RNA pretraining ...')
         pretrain_r_loss, pretrain_r_kl, pretrain_r_loss_val, pretrain_r_kl_val = [], [], [], []
         with tqdm(total = R2R_pretrain_epoch, ncols=100) as pbar:
@@ -666,9 +665,9 @@ class Model():
         
         
         pretrain_a_loss, pretrain_a_kl, pretrain_a_loss_val, pretrain_a_kl_val = [], [], [], []
-        my_logger.info('ATAC pretraining ...')
+        my_logger.info('ADT pretraining ...')
         with tqdm(total = A2A_pretrain_epoch, ncols=100) as pbar:
-            pbar.set_description('ATAC pretrain')
+            pbar.set_description('ADT pretrain')
             for epoch in range(A2A_pretrain_epoch):
                 pretrain_a_loss_, pretrain_a_kl_, pretrain_a_loss_val_, pretrain_a_kl_val_ = [], [], [], []
                 self.set_train()
@@ -679,7 +678,7 @@ class Model():
 
                     RNA_input, ATAC_input = torch.split(batch_samples, [RNA_input_dim, ATAC_input_dim], dim=1)
 
-                    """ pretrain for ATAC """
+                    """ pretrain for ADT """
                     weight_temp = loss_weight.copy()
                     if epoch < A_pretrain_kl_warmup:
                         weight_temp[4] = loss_weight[4] * epoch / A_pretrain_kl_warmup
@@ -722,7 +721,7 @@ class Model():
                     val='{:.4f}'.format(np.mean(pretrain_a_loss_)))
                 
                 if self.early_stopping_A2A.early_stop:
-                    my_logger.info('ATAC pretraining early stop, validation loss does not improve in '+str(patience)+' epoches!')
+                    my_logger.info('ADT pretraining early stop, validation loss does not improve in '+str(patience)+' epoches!')
                     self.ATAC_encoder.load_state_dict(torch.load(output_path + '/model/ATAC_encoder.pt'))
                     self.ATAC_decoder.load_state_dict(torch.load(output_path + '/model/ATAC_decoder.pt'))
                     self.A_translator.load_state_dict(torch.load(output_path + '/model/A_translator.pt'))
@@ -851,7 +850,6 @@ class Model():
         self,
         test_id_r: list,
         test_id_a: list,
-        batch_size: int,
         model_path: str = None,
         load_model: bool = True,
         output_path: str = None,
@@ -870,9 +868,6 @@ class Model():
             
         train_id_a: list
             list of ATAC data cell ids for training.
-
-        batch_size: int
-            batch size for training and validation, default 64.
             
         model_path: str
             path for load trained model, default None.
@@ -896,12 +891,12 @@ class Model():
             return predict or not, if True, output (A2R_predict, R2A_predict) as returns, deafult False.
             
         """
+        """ load model from model_path if need """
         my_logger = create_logger(name='Tester', ch=True, fh=False, levelname=logging.INFO, overwrite=False)
         
         if output_path is None:
             output_path = '.'
         
-        """ load model from model_path if need """
         if load_model:
             my_logger.info('load trained model from path: '+str(model_path)+'/model')
             self.RNA_encoder.load_state_dict(torch.load(model_path + '/model/RNA_encoder.pt'))
@@ -916,17 +911,19 @@ class Model():
         
         self.R_test_dataset = Single_omics_dataset(self.RNA_data, test_id_r)
         self.A_test_dataset = Single_omics_dataset(self.ATAC_data, test_id_a)
-        self.R_test_dataloader = DataLoader(self.R_test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
-        self.A_test_dataloader = DataLoader(self.A_test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+        self.R_test_dataloader = DataLoader(self.R_test_dataset, batch_size=64, shuffle=False, num_workers=self.num_workers)
+        self.A_test_dataloader = DataLoader(self.A_test_dataset, batch_size=64, shuffle=False, num_workers=self.num_workers)
 
         self.set_eval()
         my_logger.info('get predicting ...')
         """ record the predicted data """
         R2A_predict = []
         A2R_predict = []
+        R2_predict = []
+        A2_predict = []
         with torch.no_grad():
             with tqdm(total = len(self.R_test_dataloader), ncols=100) as pbar:
-                pbar.set_description('RNA to ATAC predicting...')
+                pbar.set_description('RNA to ADT predicting...')
                 for idx, batch_samples in enumerate(self.R_test_dataloader):
                     if torch.cuda.is_available():
                         batch_samples = batch_samples.cuda().to(torch.float32)
@@ -934,15 +931,16 @@ class Model():
                     R2 = self.RNA_encoder(batch_samples)
                     R2R, R2A, mu_r, sigma_r = self.translator.test_model(R2, 'RNA')
                     R2A = self.ATAC_decoder(R2A)
-
+                    
                     R2A_predict.append(R2A.cpu())
-
+                    R2_predict.append(mu_r.cpu())
+                    
                     time.sleep(0.01)
                     pbar.update(1)
 
         with torch.no_grad():
             with tqdm(total = len(self.A_test_dataloader), ncols=100) as pbar:
-                pbar.set_description('ATAC to RNA predicting...')
+                pbar.set_description('ADT to RNA predicting...')
                 for idx, batch_samples in enumerate(self.A_test_dataloader):
                     if torch.cuda.is_available():
                         batch_samples = batch_samples.cuda().to(torch.float32)
@@ -951,7 +949,8 @@ class Model():
                     A2R, A2A, mu_a, sigma_a = self.translator.test_model(A2, 'ATAC')
                     A2R = self.RNA_decoder(A2R)
 
-                    A2R_predict.append(A2R.cpu())
+                    A2R_predict.append(A2R.cpu())                       
+                    A2_predict.append(mu_a.cpu())
                     
                     time.sleep(0.01)
                     pbar.update(1)
@@ -962,12 +961,11 @@ class Model():
         A2R_predict.obs = self.ATAC_data_obs.iloc[test_id_a, :]
         R2A_predict.obs = self.RNA_data_obs.iloc[test_id_r, :]
 
-        """ draw umap if needed """
+        """ draw tsne if needed """
         if test_figure:
             my_logger.info('drawing tsne figures ...')
             fig_A2R = draw_tsne(A2R_predict, 'a2r', 'cell_type')
             fig_R2A = draw_tsne(R2A_predict, 'r2a', 'cell_type')
-            
             fig_list = [fig_A2R, fig_R2A]
             with PdfPages(output_path + '/tSNE.pdf') as pdf:
                 for i in range(len(fig_list)):
@@ -989,7 +987,6 @@ class Model():
             index_matrix.columns = ['ARI', 'AMI', 'NMI', 'HOM']
             index_matrix.index = ['R2A', 'A2R']
             index_matrix.to_csv(output_path + '/cluster_index.csv')
-            
 
         """ save predicted model if needed """
         if output_data and not os.path.exists(output_path + '/predict'):

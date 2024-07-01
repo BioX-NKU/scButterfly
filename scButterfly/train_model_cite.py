@@ -34,7 +34,7 @@ class Model():
         R_encoder_act_list: list = [nn.LeakyReLU(), nn.LeakyReLU()],
         A_encoder_act_list: list = [nn.LeakyReLU(), nn.LeakyReLU()],
         R_decoder_act_list: list = [nn.LeakyReLU(), nn.LeakyReLU()],
-        A_decoder_act_list: list = [nn.LeakyReLU(), nn.Sigmoid()],
+        A_decoder_act_list: list = [nn.LeakyReLU(), nn.Identity()],
         translator_embed_dim: int = 128, 
         translator_input_dim_r: int = 128,
         translator_input_dim_a: int = 128,

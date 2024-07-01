@@ -7,6 +7,8 @@ import scanpy as sc
 import anndata as ad
 from scButterfly.logger import *
 from scButterfly.model_utlis import *
+from scButterfly.calculate_cluster import *
+from scButterfly.split_datasets import *
 import warnings
 import torch
 import torch.nn as nn
@@ -164,7 +166,7 @@ class Butterfly():
         Parameters
         ----------
         aug_type: str
-            Butterfly support two types of aug_type, "cell_type_augmentation" and "MultiVI_augmentation". "cell_type_augmentation" need "cell_type" in RNA_data.obs and ATAC_data.obs， default None.
+            Butterfly support two types of aug_type, "cell_type_augmentation"(scButterfly-T), "type_cluster_augmentation"(scButterfly-TC) and "MultiVI_augmentation"(scButterfly-C). "cell_type_augmentation" and "type_cluster_augmentation" need "cell_type" in RNA_data.obs and ATAC_data.obs， default None.
             
         MultiVI_path: str
             path for pretrained MultiVI model, if None, Butterfly will train a MultiVI model first, default None.
@@ -184,7 +186,76 @@ class Butterfly():
                     self.train_id_r.extend(idx_temp)
                     random.shuffle(idx_temp)
                     self.train_id_a.extend(idx_temp)
-        if aug_type == 'cell_type_augmentation' and not 'cell_type' in self.RNA_data.obs.keys():
+        if aug_type == 'type_cluster_augmentation' and 'cell_type' in self.RNA_data.obs.keys():
+            self.my_logger.info('using data augmentation with cluster labels for each cell type.')
+            from scvi_colab import install
+            import pandas as pd
+            install()
+            import scvi
+            import sys
+            import scipy.sparse as sp
+            
+            copy_count = 3
+            random.seed(19193)
+            self.ATAC_data.obs.index = [str(i) for i in range(len(self.ATAC_data.obs.index))]
+            cell_type = self.ATAC_data.obs.cell_type.iloc[self.train_id_a]
+            for i in range(len(cell_type.cat.categories)):
+                cell_type_name = cell_type.cat.categories[i]
+                idx_temp = list(cell_type[cell_type == cell_type_name].index.astype(int))
+                RNA_temp = self.RNA_data[idx_temp]
+                ATAC_temp = self.ATAC_data[idx_temp]
+        
+                try:
+                    adata = ad.AnnData(sp.hstack((RNA_temp.X, ATAC_temp.X)))
+                    adata.X = adata.X.tocsr()
+                    adata.obs = RNA_temp.obs
+        
+                    m = len(self.RNA_data.var.index)
+                    n = len(self.ATAC_data.var.index)
+                    adata.var.index = pd.Series([RNA_temp.var.index[i] if i<m else ATAC_temp.var.index[i-m] for i in range(m+n)], dtype='object')
+                    adata.var['modality'] = pd.Series(['Gene Expression' if i<m else 'Peaks' for i in range(m+n)], dtype='object').values
+        
+                    adata.var_names_make_unique()
+        
+                    adata_mvi = scvi.data.organize_multiome_anndatas(adata)
+        
+                    adata_mvi = adata_mvi[:, adata_mvi.var["modality"].argsort()].copy()
+        
+                    sc.pp.filter_genes(adata_mvi, min_cells=int(adata_mvi.shape[0] * 0.01))
+        
+                    scvi.model.MULTIVI.setup_anndata(adata_mvi, batch_key='modality')
+        
+                    mvi = scvi.model.MULTIVI(
+                        adata_mvi,
+                        n_genes=(adata_mvi.var['modality']=='Gene Expression').sum(),
+                        n_regions=(adata_mvi.var['modality']=='Peaks').sum()
+                    )
+        
+                    mvi.train()
+        
+                    adata_mvi.obsm["MultiVI_latent"] = mvi.get_latent_representation()
+                    leiden_adata = ad.AnnData(adata_mvi.obsm["MultiVI_latent"])
+                    sc.pp.neighbors(leiden_adata)
+                    sc.tl.leiden(leiden_adata)
+        
+                    refined_cluster = leiden_adata.obs.leiden
+                    for j in range(len(refined_cluster.cat.categories)):
+                        refined_cluster_name = refined_cluster.cat.categories[j]
+                        refined_cluster_idx_temp = list(refined_cluster[refined_cluster == refined_cluster_name].index.astype(int))
+                        for k in range(copy_count - 1):
+                            random.shuffle(refined_cluster_idx_temp)
+                            for each in refined_cluster_idx_temp:
+                                self.train_id_r.append(idx_temp[each])
+                            random.shuffle(refined_cluster_idx_temp)
+                            for each in refined_cluster_idx_temp:
+                                self.train_id_a.append(idx_temp[each])
+                except:
+                    for j in range(copy_count - 1):
+                        random.shuffle(idx_temp)
+                        self.train_id_r.extend(idx_temp)
+                        random.shuffle(idx_temp)
+                        self.train_id_a.extend(idx_temp)
+        if (aug_type == 'cell_type_augmentation' or aug_type == 'type_cluster_augmentation') and not 'cell_type' in self.RNA_data.obs.keys():
             self.my_logger.warning('not find "cell_type" in data.obs, trying to use MultiVI augmentation ...')
             aug_type = 'MultiVI_augmentation'
         if aug_type == 'MultiVI_augmentation':
@@ -555,6 +626,7 @@ class Butterfly():
 
     def test_model(
         self, 
+        batch_size = 64,
         model_path = None,
         load_model = False,
         output_path = None,
@@ -590,6 +662,7 @@ class Butterfly():
         A2R_predict, R2A_predict = self.model.test(
             test_id_r = self.test_id_r,
             test_id_a = self.test_id_a, 
+            batch_size = batch_size,
             model_path = model_path,
             load_model = load_model,
             output_path = output_path,

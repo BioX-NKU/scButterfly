@@ -178,22 +178,6 @@ def bm_batch_split_dataset(
     ATAC_data, 
     seed = 19193
 ):
-    """
-    Split datasets into train, validation and test part using different cell types.
-    
-    Parameters
-    ----------
-    RNA_data
-        full RNA data for spliting.
-        
-    ATAC_data
-        full ATAC data for spliting.
-        
-    seed
-        random seed use to split datasets, if don't give random seed, set it None.
-        
-    """ 
-    
     if not seed is None:
         setup_seed(seed)
     
@@ -226,22 +210,7 @@ def unpaired_split_dataset_perturb(
     ATAC_data, 
     seed = 19193
 ):
-    """
-    Split datasets into train, validation and test part using different cell types.
-    
-    Parameters
-    ----------
-    RNA_data
-        full RNA data for spliting.
-        
-    ATAC_data
-        full ATAC data for spliting.
-        
-    seed
-        random seed use to split datasets, if don't give random seed, set it None.
-        
-    """ 
-    
+
     import ot
     
     if not seed is None:
@@ -322,6 +291,100 @@ def unpaired_split_dataset_perturb(
             validation_a_id_temp = list(validation_ATAC[validation_ATAC.cell_type == ctype].index.astype(int))
             validation_a_id_temp = np.array(validation_a_id_temp)
             id_list[i][3].extend(list(validation_a_id_temp[embedding_dict[ctype]])[train_count:])
+            
+    return id_list
+
+
+def unpaired_split_dataset_perturb_no_reusing(
+    RNA_data, 
+    ATAC_data,
+    sc_data,
+    seed = 19193,
+):
+    import ot
+    from scipy.optimize import linear_sum_assignment
+    
+    if not seed is None:
+        setup_seed(seed)
+
+    cell_type_list = list(RNA_data.obs.cell_type.cat.categories)
+    
+    id_list = [[[] for j in range(6)] for i in range(len(cell_type_list))]
+    
+    batch_list = list(RNA_data.obs.cell_type.cat.categories)
+    
+    random.shuffle(batch_list)
+    
+    embedding_dict_ctr = {}
+    embedding_dict_sti = {}
+    for ctype in cell_type_list:
+        sc_data_type_R = RNA_data[RNA_data.obs.cell_type == ctype].copy()
+        sc_data_type_A = ATAC_data[ATAC_data.obs.cell_type == ctype].copy()
+        sc_data_type = sc.AnnData.concatenate(sc_data_type_R, sc_data_type_A)
+        sc.pp.pca(sc_data_type)
+        z_ctrl = sc_data_type.obsm['X_pca'][sc_data_type.obs.condition == 'control']
+        z_stim = sc_data_type.obsm['X_pca'][sc_data_type.obs.condition == 'stimulated']
+        M = ot.dist(z_ctrl, z_stim, metric='euclidean')
+        G = ot.emd(torch.ones(z_ctrl.shape[0]) / z_ctrl.shape[0],
+                  torch.ones(z_stim.shape[0]) / z_stim.shape[0],
+                  torch.tensor(M), numItermax=100000)
+        row_ind,col_ind = linear_sum_assignment(G)
+        embedding_dict_ctr[ctype] = row_ind
+        embedding_dict_sti[ctype] = col_ind
+        print(ctype)
+    
+    for i in range(len(cell_type_list)):
+        
+        test_batch_r = batch_list[:1]
+        validation_batch_r = batch_list[1:]
+        train_batch_r = batch_list[1:]
+        test_batch_a = batch_list[:1]
+        validation_batch_a = batch_list[1:]
+        train_batch_a = batch_list[1:]
+        batch_list.extend(test_batch_r)
+        batch_list = batch_list[1:]
+        
+        for each in test_batch_r:
+            id_list[i][4].extend(list(RNA_data.obs.cell_type[RNA_data.obs.cell_type == each].index.astype(int)))
+            
+        for each in test_batch_a:
+            id_list[i][5].extend(list(ATAC_data.obs.cell_type[ATAC_data.obs.cell_type == each].index.astype(int)))
+        
+        train_RNA_id = []
+        train_ATAC_id = []
+        validation_RNA_id = []
+        validation_ATAC_id = []
+        for each in train_batch_r:
+            train_RNA_id.extend(list(RNA_data.obs[RNA_data.obs.cell_type == each].index))
+        for each in train_batch_a:
+            train_ATAC_id.extend(list(ATAC_data.obs[ATAC_data.obs.cell_type == each].index))
+        for each in validation_batch_r:
+            validation_RNA_id.extend(list(RNA_data.obs[RNA_data.obs.cell_type == each].index))
+        for each in validation_batch_a:
+            validation_ATAC_id.extend(list(ATAC_data.obs[ATAC_data.obs.cell_type == each].index))
+        train_RNA = RNA_data.obs.loc[train_RNA_id, :]
+        train_ATAC = ATAC_data.obs.loc[train_ATAC_id, :]
+        validation_RNA = RNA_data.obs.loc[validation_RNA_id, :]
+        validation_ATAC = ATAC_data.obs.loc[validation_ATAC_id, :]
+
+        for ctype in cell_type_list:
+            train_r_id_temp = list(train_RNA[train_RNA.cell_type == ctype].index.astype(int))
+            train_count = int(0.8 * len(train_r_id_temp))
+            if train_count == 0:
+                continue
+            train_r_id_temp = list(train_RNA[train_RNA.cell_type == ctype].index.astype(int))
+            train_r_id_temp = np.array(train_r_id_temp)
+            id_list[i][0].extend(list(train_r_id_temp[embedding_dict_ctr[ctype]])[0:train_count])
+            train_a_id_temp = list(train_ATAC[train_ATAC.cell_type == ctype].index.astype(int))
+            train_a_id_temp = np.array(train_a_id_temp)
+            id_list[i][1].extend(list(train_a_id_temp[embedding_dict_sti[ctype]])[0:train_count])
+            
+            validation_r_id_temp = list(validation_RNA[validation_RNA.cell_type == ctype].index.astype(int))
+            validation_r_id_temp = np.array(validation_r_id_temp)
+            id_list[i][2].extend(list(validation_r_id_temp[embedding_dict_ctr[ctype]])[train_count:])
+            validation_a_id_temp = list(validation_ATAC[validation_ATAC.cell_type == ctype].index.astype(int))
+            validation_a_id_temp = np.array(validation_a_id_temp)
+            id_list[i][3].extend(list(validation_a_id_temp[embedding_dict_sti[ctype]])[train_count:])
             
     return id_list
 
